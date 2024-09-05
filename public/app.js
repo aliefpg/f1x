@@ -42,7 +42,8 @@ function logout() {
     currentUser = null;
     document.getElementById('add-article-button').style.display = 'none';
     document.getElementById('logout-button').style.display = 'none';
-    document.getElementById('article-list').innerHTML = '';
+    // document.getElementById('article-list').innerHTML = '';
+    loadArticles();
 }
 
 // Tampilkan formulir artikel
