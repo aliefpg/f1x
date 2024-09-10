@@ -27,15 +27,18 @@
         </div>
     </header>
     <div class="container">
-        <div id="article-form" style="display: none;">
-            <input type="hidden" id="article-id">
-            <input type="text" id="article-title" placeholder="Title" required>
-            <input type="text" id="article-author" placeholder="Author" required>
-            <textarea id="article-content" placeholder="Content" rows="5" required></textarea>
-            <button id="save-article-button" onclick="saveOrUpdateArticle()">Save</button>
-            <button id="update-article-button" style="display: none;" onclick="saveOrUpdateArticle()">Update</button>
-            <button onclick="hideArticleForm()">Cancel</button>
-        </div>
+        <!-- Formulir Artikel -->
+<div id="article-form" style="display: none;">
+    <input type="hidden" id="article-id">
+    <input type="text" id="article-title" placeholder="Title" required>
+    <input type="text" id="article-author" placeholder="Author" required>
+    <textarea id="article-content" placeholder="Content" rows="5" required></textarea>
+    <input type="file" id="article-image" accept="image/*"> <!-- Input file untuk gambar -->
+    <button id="save-article-button" onclick="saveOrUpdateArticle()">Save</button>
+    <button id="update-article-button" style="display: none;" onclick="saveOrUpdateArticle()">Update</button>
+    <button onclick="hideArticleForm()">Cancel</button>
+</div>
+
         <div id="article-list"></div>
     </div>
     <footer>

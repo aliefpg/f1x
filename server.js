@@ -1,20 +1,23 @@
 const Hapi = require('@hapi/hapi');
+const Inert = require('@hapi/inert');
 const routes = require('./routes');
 const path = require('path');
-const inert = require('@hapi/inert');
 
-// Variabel global untuk menyimpan status login
 let currentUser = { value: null };
 
 const init = async () => {
     const server = Hapi.server({
         port: 3000,
-        host: 'localhost'
+        host: 'localhost',
+        routes: {
+            files: {
+                relativeTo: path.join(__dirname, 'public')
+            }
+        }
     });
 
-    await server.register(inert);
+    await server.register(Inert);
 
-    // Melayani file statis dari folder 'public'
     server.route({
         method: 'GET',
         path: '/{param*}',
@@ -27,7 +30,6 @@ const init = async () => {
         }
     });
 
-    // Register routes untuk API
     server.route(routes(currentUser));
 
     await server.start();
