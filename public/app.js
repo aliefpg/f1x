@@ -1,187 +1,266 @@
-let currentUser = null;
+// Mengambil elemen-elemen dari HTML
+const loginBtn = document.getElementById('login-btn');
+const logoutBtn = document.getElementById('logout-btn'); // Ambil elemen tombol logout
+const loginModal = document.getElementById('login-modal');
+const closeBtn = document.getElementById('close-btn');
+const loginForm = document.getElementById('login-form');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const loginError = document.getElementById('login-error');
+const addArticleBtn = document.getElementById('add-article-btn');
+const crudButtons = document.getElementById('crud-buttons');
+const articlesSection = document.getElementById('articles');
 
-// Tampilkan formulir login
-function showLoginForm() {
-    document.getElementById('login-form').style.display = 'block';
-    document.getElementById('show-login-button').style.display = 'none';
+// Modal untuk edit artikel
+const editModal = document.getElementById('edit-modal');
+const titleInput = document.getElementById('title-input');
+const authorInput = document.getElementById('author-input');
+const contentInput = document.getElementById('content-input');
+const saveEditBtn = document.getElementById('save-edit-btn');
+
+// Modal untuk menambah artikel
+const addModal = document.getElementById('add-modal');
+const addTitleInput = document.getElementById('add-title-input');
+const addAuthorInput = document.getElementById('add-author-input');
+const addContentInput = document.getElementById('add-content-input');
+const saveAddBtn = document.getElementById('save-add-btn');
+
+let currentEditId = null;
+
+// Fungsi untuk menampilkan modal login
+function showLoginModal() {
+    loginModal.classList.remove('hidden');
 }
 
-// Sembunyikan formulir login
-function hideLoginForm() {
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('show-login-button').style.display = 'block';
+// Fungsi untuk menyembunyikan modal login
+function hideLoginModal() {
+    loginModal.classList.add('hidden');
+    loginError.classList.add('hidden'); // Reset error message
 }
 
-// Login ke sistem
-async function login() {
-    const username = document.getElementById('login-username').value;
-    const password = document.getElementById('login-password').value;
+// Fungsi untuk login
+async function login(event) {
+    event.preventDefault(); // Mencegah form dari pengiriman default
 
-    const response = await fetch('/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username, password })
-    });
-
-    const result = await response.json();
-    if (response.ok) {
-        currentUser = result.user;
-        localStorage.setItem('currentUser', JSON.stringify(currentUser)); // Simpan user di localStorage
-        hideLoginForm();
-        document.getElementById('add-article-button').style.display = currentUser.isAdmin ? 'block' : 'none';
-        document.getElementById('logout-button').style.display = 'block';
-        loadArticles();
-    } else {
-        alert(result.error);
-    }
-}
-
-// Logout dari sistem
-function logout() {
-    currentUser = null;
-    localStorage.removeItem('currentUser'); // Hapus user dari localStorage
-    document.getElementById('add-article-button').style.display = 'none';
-    document.getElementById('logout-button').style.display = 'none';
-    loadArticles();
-}
-
-// Tampilkan formulir artikel
-function showArticleForm() {
-    document.getElementById('article-form').style.display = 'block';
-    document.getElementById('save-article-button').style.display = 'inline-block';
-    document.getElementById('update-article-button').style.display = 'none';
-}
-
-// Sembunyikan formulir artikel
-function hideArticleForm() {
-    document.getElementById('article-form').style.display = 'none';
-    document.getElementById('article-id').value = '';
-    document.getElementById('article-title').value = '';
-    document.getElementById('article-author').value = '';
-    document.getElementById('article-content').value = '';
-    document.getElementById('article-image').value = '';
-}
-
-// Simpan atau update artikel tergantung pada mode (baru atau edit)
-async function saveOrUpdateArticle() {
-    const id = document.getElementById('article-id').value;
-    const method = id ? 'PUT' : 'POST';
-    const url = id ? `/articles/${id}` : '/articles';
-
-    const formData = new FormData();
-    formData.append('title', document.getElementById('article-title').value);
-    formData.append('author', document.getElementById('article-author').value);
-    formData.append('content', document.getElementById('article-content').value);
-
-    const imageFile = document.getElementById('article-image').files[0];
-    if (imageFile) {
-        formData.append('image', imageFile);
-    }
+    const username = usernameInput.value;
+    const password = passwordInput.value;
 
     try {
-        const response = await fetch(url, {
-            method: method,
-            body: formData,
+        const response = await fetch('/login', {
+            method: 'POST',
             headers: {
-                'Authorization': `Bearer ${currentUser.token}` // Ensure you have the token from login
-            }
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
         });
 
-        if (response.ok) {
-            hideArticleForm();
-            loadArticles();
-        } else {
-            const result = await response.json();
-            alert(result.error || 'An error occurred while saving the article.');
+        if (!response.ok) {
+            throw new Error('Login failed');
         }
+
+        const result = await response.json();
+        alert('Login successful');
+
+        // Hide login modal and show CRUD buttons
+        hideLoginModal();
+        crudButtons.classList.remove('hidden');
+        logoutBtn.classList.remove('hidden'); // Tampilkan tombol logout
+        loginBtn.classList.add('hidden'); // Sembunyikan tombol login
+
+        fetchArticles(); // Fetch articles after successful login
     } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred while saving the article.');
+        console.error('Error logging in:', error);
+        loginError.classList.remove('hidden'); // Show error message
     }
 }
 
-// Hapus artikel
-async function deleteArticle(id) {
-    if (confirm('Are you sure you want to delete this article?')) {
-        try {
-            const response = await fetch(`/articles/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${currentUser.token}`
-                }
-            });
-
-            if (response.ok) {
-                loadArticles();
-            } else {
-                const result = await response.json();
-                alert(result.error || 'An error occurred while deleting the article.');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while deleting the article.');
-        }
-    }
-}
-
-// Muat artikel dari server
-async function loadArticles() {
+// Fungsi untuk mengambil semua artikel
+async function fetchArticles() {
     try {
         const response = await fetch('/articles');
+        if (!response.ok) {
+            throw new Error('Failed to fetch articles');
+        }
         const articles = await response.json();
-
-        const articleList = document.getElementById('article-list');
-        articleList.innerHTML = '';
-
-        articles.forEach(article => {
-            const articleItem = document.createElement('div');
-            articleItem.className = 'article-item';
-            articleItem.innerHTML = `
-                <h3>${article.title}</h3>
-                <p><strong>Author:</strong> ${article.author}</p>
-                <p>${article.content}</p>
-                ${article.image ? `<img src="/uploads/${article.image}" alt="${article.title}">` : ''}
-                ${currentUser && currentUser.isAdmin ? `
-                    <button onclick="editArticle('${article.id}')">Edit</button>
-                    <button onclick="deleteArticle('${article.id}')">Delete</button>
-                ` : ''}
-            `;
-            articleList.appendChild(articleItem);
-        });
+        displayArticles(articles);
     } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred while loading articles.');
+        console.error('Error fetching articles:', error);
+        alert('Failed to fetch articles. Please try again later.');
     }
 }
 
-// Edit artikel
-function editArticle(id) {
-    fetch(`/articles/${id}`)
-        .then(response => response.json())
-        .then(article => {
-            document.getElementById('article-id').value = article.id;
-            document.getElementById('article-title').value = article.title;
-            document.getElementById('article-author').value = article.author;
-            document.getElementById('article-content').value = article.content;
-            document.getElementById('save-article-button').style.display = 'none';
-            document.getElementById('update-article-button').style.display = 'inline-block';
-            showArticleForm();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while loading the article for editing.');
+// Fungsi untuk menampilkan artikel di antarmuka
+function displayArticles(articles) {
+    articlesSection.innerHTML = ''; // Kosongkan daftar sebelum menambahkan yang baru
+
+    articles.forEach(article => {
+        const articleItem = createArticleItem(article);
+        articlesSection.appendChild(articleItem);
+    });
+}
+
+// Fungsi untuk membuat elemen artikel dalam daftar
+function createArticleItem(article) {
+    const articleItem = document.createElement('div');
+    articleItem.classList.add('article-item');
+
+    const title = document.createElement('h3');
+    title.textContent = article.title;
+
+    const author = document.createElement('p');
+    author.textContent = `Author: ${article.author}`;
+
+    const content = document.createElement('p');
+    content.textContent = article.content;
+
+    const editButton = document.createElement('button');
+    editButton.textContent = 'Edit';
+    editButton.addEventListener('click', () => showEditForm(article));
+
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete';
+    deleteButton.addEventListener('click', () => deleteArticle(article.id));
+
+    articleItem.appendChild(title);
+    articleItem.appendChild(author);
+    articleItem.appendChild(content);
+    articleItem.appendChild(editButton);
+    articleItem.appendChild(deleteButton);
+
+    return articleItem;
+}
+
+// Fungsi untuk menghapus artikel
+async function deleteArticle(id) {
+    try {
+        const response = await fetch(`/articles/${id}`, {
+            method: 'DELETE'
         });
+
+        if (!response.ok) {
+            throw new Error('Failed to delete article');
+        }
+
+        alert('Article deleted successfully');
+        fetchArticles();
+    } catch (error) {
+        console.error('Error deleting article:', error);
+        alert('Failed to delete article. Please try again later.');
+    }
 }
 
-// Inisialisasi aplikasi
-document.addEventListener('DOMContentLoaded', () => {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-        currentUser = JSON.parse(storedUser);
-        document.getElementById('add-article-button').style.display = currentUser.isAdmin ? 'block' : 'none';
-        document.getElementById('logout-button').style.display = 'block';
-    }
-    loadArticles();
+// Fungsi untuk menampilkan modal edit dengan data artikel
+function showEditForm(article) {
+    currentEditId = article.id;
+    titleInput.value = article.title;
+    authorInput.value = article.author;
+    contentInput.value = article.content;
+
+    editModal.classList.remove('hidden');
+}
+
+// Menyembunyikan modal edit
+function hideEditForm() {
+    editModal.classList.add('hidden');
+}
+
+// Menyimpan perubahan ketika tombol Save ditekan
+saveEditBtn.addEventListener('click', async () => {
+    const title = titleInput.value;
+    const author = authorInput.value;
+    const content = contentInput.value;
+
+    await updateArticle(currentEditId, { title, author, content });
+    hideEditForm();
 });
+
+// Fungsi untuk memperbarui artikel
+async function updateArticle(id, updatedData) {
+    try {
+        const response = await fetch(`/articles/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedData)
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update article');
+        }
+
+        alert('Article updated successfully');
+        fetchArticles(); // Memuat ulang artikel setelah berhasil diupdate
+    } catch (error) {
+        console.error('Error updating article:', error);
+        alert('Failed to update article. Please try again later.');
+    }
+}
+
+// Fungsi untuk menampilkan modal tambah artikel
+function showAddForm() {
+    addModal.classList.remove('hidden');
+}
+
+// Menyembunyikan modal tambah artikel
+function hideAddForm() {
+    addModal.classList.add('hidden');
+}
+
+// Menyimpan artikel baru ketika tombol Save ditekan
+saveAddBtn.addEventListener('click', async () => {
+    const title = addTitleInput.value;
+    const author = addAuthorInput.value;
+    const content = addContentInput.value;
+
+    await addArticle({ title, author, content });
+    hideAddForm();
+});
+
+// Fungsi untuk menambahkan artikel
+async function addArticle(articleData) {
+    try {
+        const response = await fetch('/articles', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(articleData)
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to add article');
+        }
+
+        alert('Article added successfully');
+        fetchArticles(); // Memuat ulang artikel setelah berhasil ditambahkan
+    } catch (error) {
+        console.error('Error adding article:', error);
+        alert('Failed to add article. Please try again later.');
+    }
+}
+
+// Fungsi untuk logout
+function logout() {
+    // Reset status login dan antarmuka pengguna
+    crudButtons.classList.add('hidden'); // Sembunyikan tombol CRUD
+    logoutBtn.classList.add('hidden'); // Sembunyikan tombol logout
+    loginBtn.classList.remove('hidden'); // Tampilkan tombol login
+    articlesSection.innerHTML = ''; // Kosongkan daftar artikel
+    alert('Logout successful');
+}
+
+// Event listeners
+loginBtn.addEventListener('click', showLoginModal);
+closeBtn.addEventListener('click', hideLoginModal);
+loginForm.addEventListener('submit', login);
+addArticleBtn.addEventListener('click', showAddForm); // Tombol untuk menambah artikel
+// Menutup modal tambah artikel saat mengklik tombol close
+const closeAddBtn = document.getElementById('close-add-btn');
+closeAddBtn.addEventListener('click', hideAddForm);
+
+// Event listener untuk tombol logout
+logoutBtn.addEventListener('click', logout); // Tambahkan event listener untuk logout
+
+// Memanggil fungsi fetchArticles untuk pertama kali saat aplikasi dimuat
+fetchArticles();

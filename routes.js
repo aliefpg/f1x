@@ -1,11 +1,10 @@
 const handlers = require('./handlers');
-const path = require('path');
 
-module.exports = (currentUser) => [
+module.exports = [
     {
         method: 'POST',
         path: '/login',
-        handler: handlers.login(currentUser)
+        handler: handlers.login
     },
     {
         method: 'GET',
@@ -20,34 +19,16 @@ module.exports = (currentUser) => [
     {
         method: 'POST',
         path: '/articles',
-        options: {
-            payload: {
-                output: 'stream',
-                parse: true,
-                allow: 'multipart/form-data',
-                maxBytes: 5 * 1024 * 1024, // 5MB max file size
-                multipart: true
-            },
-            handler: handlers.addArticle(currentUser)
-        }
+        handler: handlers.addArticle
     },
     {
         method: 'PUT',
         path: '/articles/{id}',
-        options: {
-            payload: {
-                output: 'stream',
-                parse: true,
-                allow: 'multipart/form-data',
-                maxBytes: 5 * 1024 * 1024, // 5MB max file size
-                multipart: true
-            },
-            handler: handlers.updateArticle(currentUser)
-        }
+        handler: handlers.updateArticle
     },
     {
-        method: 'DELETE',
+        method: 'DELETE', // Pastikan metode ini ada
         path: '/articles/{id}',
-        handler: handlers.deleteArticle(currentUser)
+        handler: handlers.deleteArticle
     }
 ];
