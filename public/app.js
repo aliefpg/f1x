@@ -1,6 +1,6 @@
 // Mengambil elemen-elemen dari HTML
 const loginBtn = document.getElementById('login-btn');
-const logoutBtn = document.getElementById('logout-btn'); // Ambil elemen tombol logout
+const logoutBtn = document.getElementById('logout-btn');
 const loginModal = document.getElementById('login-modal');
 const closeBtn = document.getElementById('close-btn');
 const loginForm = document.getElementById('login-form');

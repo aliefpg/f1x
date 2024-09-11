@@ -27,7 +27,7 @@ module.exports = [
         handler: handlers.updateArticle
     },
     {
-        method: 'DELETE', // Pastikan metode ini ada
+        method: 'DELETE',
         path: '/articles/{id}',
         handler: handlers.deleteArticle
     }

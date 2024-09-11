@@ -2,18 +2,11 @@ const pool = require('./db');
 
 const login = async (request, h) => {
     const { username, password } = request.payload;
-
-    // Tambahkan log untuk melihat nilai username dan password
-    console.log(`Username: ${username}, Password: ${password}`);
-
-    // Query database menggunakan tabel admin
     const [rows] = await pool.execute('SELECT * FROM admin WHERE username = ? AND password = ?', [username, password]);
 
     if (rows.length === 0) {
         return h.response({ error: 'Invalid username or password' }).code(401);
     }
-
-    // Kirim respons jika login berhasil
     return h.response({ message: 'Login successful', user: rows[0] }).code(200);
 };
 
@@ -71,12 +64,11 @@ const deleteArticle = async (request, h) => {
     return h.response({ message: 'Article deleted successfully' }).code(200);
 };
 
-// Pastikan untuk mengekspor deleteArticle
 module.exports = {
     login,
     getAllArticles,
     getArticleById,
     addArticle,
     updateArticle,
-    deleteArticle // Tambahkan ini
+    deleteArticle
 };
